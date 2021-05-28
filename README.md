@@ -1,2 +1,2 @@
 # ziggy-orchard
-Implementing my Orchard children's boardgame sim as I learn Zig
+An implementation of my orchard boardgame simulation in [Zig](https://ziglang.org/). This is just me getting familiar with the language.
