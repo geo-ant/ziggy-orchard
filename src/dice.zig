@@ -20,8 +20,8 @@ pub const DiceResult = union(enum) {
     }
 };
 
-const Raven = struct {};
-const Basket = struct {};
+pub const Raven = struct {};
+pub const Basket = struct {};
 pub const Fruit = struct {
     index: usize,
     pub const TREE_COUNT: usize = 4;
