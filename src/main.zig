@@ -3,8 +3,8 @@ const dice = @import("dice.zig");
 
 const game = @import("game.zig");
 
-fn dummy_picking_strat(g :game.Game) game.Game {
-    return g;
+fn dummy_picking_strat(g :game.Game) ?usize {
+    return null;
 }
 
 pub fn main() anyerror!void {

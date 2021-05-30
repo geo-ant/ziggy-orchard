@@ -11,6 +11,20 @@ const hasFn = std.meta.trait.hasFn;
 /// https://github.com/ziglang/zig/issues/1268
 pub const hasPickingStrategyTrait = std.meta.trait.multiTrait(.{hasFn("pick")});
 
+
+pub const PickingStrat : type = fn(Game) ?usize;
+
+pub const GameError = error{
+    /// a picking strat did an illegal move (i.e. take more than one piece of fruit per pick)
+    IllegalPickingStrategy,
+    /// the game state is illegal, i.e. both won and lost
+    IllegalGameState,
+    /// fruit index for picking is out of bounds
+    FruitIndexOutOfBounds,
+    /// tried to pick empty tree
+    EmptyTreePick,
+};
+
 pub const Game = struct {
     /// number of trees with fruit (same as on dice)
     const TREE_COUNT : usize = dice.Fruit.TREE_COUNT;
@@ -20,17 +34,19 @@ pub const Game = struct {
     const INITIAL_FRUIT_COUNT = 10;
     fruit_count : [TREE_COUNT]usize,
     raven_count : usize,
+    turn_count : usize,
 
     /// a new fresh game with full fruit an no ravens
     pub fn new() @This() {
         return @This() {
             .fruit_count = [_]usize{Game.INITIAL_FRUIT_COUNT}**Game.TREE_COUNT, // see https://ziglearn.org/chapter-1/#comptime (and then search for ++ and ** operators)
             .raven_count = 0,
+            .turn_count = 0,
         };
     }
 
     pub fn print(self : Game) void {
-         std.log.info("Game: fruit = {any}, ravens = {}", .{self.fruit_count, self.raven_count});
+         std.log.info("Game: fruit = {any}, ravens = {}, turns = {}", .{self.fruit_count, self.raven_count, self.turn_count});
     }
 
     /// the total number of fruit left in the game
@@ -56,19 +72,56 @@ pub const Game = struct {
         return self.raven_count >= self.RAVEN_COMPLETE_COUNT;
     }
 
-    pub fn playToFinish(self : Game, picking_strategy : fn(Game)Game) Game {
-        return Game.new();
+
+    /// pick a piece of fruit, but do not modify the turn count
+    pub fn pick_one(self : * Game, index : usize) !void {
+        if (index < @This().TREE_COUNT) {
+            if(self.fruit_count[index]>0) {
+                self.fruit_count[index]-=1;
+            } else {
+                return GameError.EmptyTreePick;
+            }
+        } else {
+            GameError.FruitIndexOutOfBounds;
+        }
+    }
+
+    /// Apply a single turn to a game using the given dice result and picking strat
+    /// the picking strat will only be used if the dice result warrants it, i.e.
+    /// it is a basket.
+    pub fn applySingleTurn(self : * Game, dice_result : dice.DiceResult, player_pick : PickingStrat) !void {
+        switch (dice_result) {
+            DiceResult.raven => self.raven_count += 1,
+            DiceResult.fruit => |fruit| { 
+                // ignore errors here because the dice might pick an empty tree
+                _= self.pick_one(fruit.index);},
+            DiceResult.basket => {
+                const _idxs = [_]u8{1,2};
+                const total_fruit_before = self.totalFruitCount();
+                for (_idxs) |_| {
+                    if (player_pick(self)) |index| {
+                        try self.pick_one(index);
+                    }
+                }
+                // ensure that the picking strategies always decrease
+                // must decrease either to zero or decrease by two pieces of fruit
+                if (self.totalFruitCount() != 0 and
+                    self.totalFruitCount() != total_fruit_before-2) {
+                    return GameError.IllegalPickingStrategy;
+                }
+            },
+        }
+    }
+
+    /// play this game until it is finished, leaving the game is a state that is
+    /// either won or lost
+    pub fn playToFinish(self : Game, picking_strategy : PickingStrat) !void {
+        //TODO finish
     }
 };
 
-fn playGameToFinish(game : Game, picking_strategy : fn(Game)Game) Game {
-    //TODO: CHANGE THIS!!!!!!!!
-    return Game.new();
-}
-
 /// Get a generator for finished games that employs the given picking strategy
-pub fn GameGenerator(comptime picking_strategy :  fn(Game)Game, game_count : usize) type {
-    
+pub fn GameGenerator(comptime picking_strategy :  PickingStrat, game_count : usize) type {
     
     return struct {
         current_game_count : usize,
@@ -83,7 +136,9 @@ pub fn GameGenerator(comptime picking_strategy :  fn(Game)Game, game_count : usi
         pub fn next(self : * @This()) ?Game {
             if (self.current_game_count+1 < self.max_game_count) {
                 self.current_game_count += 1;
-                return Game.new().playToFinish(picking_strategy);
+                var game = Game.new();
+                game.playToFinish(picking_strategy) catch unreachable;
+                return game;
             } else {
                 return null;
             }
