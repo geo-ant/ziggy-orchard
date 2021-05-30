@@ -112,13 +112,11 @@ pub const Game = struct {
             },
         }
     }
-
-    /// play this game until it is finished, leaving the game is a state that is
-    /// either won or lost
-    pub fn playToFinish(self : Game, picking_strategy : PickingStrat) !void {
-        //TODO finish
-    }
 };
+
+// fn playGameToFinish() {
+
+// }
 
 /// Get a generator for finished games that employs the given picking strategy
 pub fn GameGenerator(comptime picking_strategy :  PickingStrat, game_count : usize) type {
@@ -126,19 +124,25 @@ pub fn GameGenerator(comptime picking_strategy :  PickingStrat, game_count : usi
     return struct {
         current_game_count : usize,
         max_game_count : usize,
+        prng : std.rand.DefaultPrng,
 
-        pub fn new() @This() {
-            return .{.current_game_count = 0, .max_game_count = game_count};
+        pub fn new(rng_seed : u64) @This() {
+            return .{
+                .current_game_count = 0, 
+                .max_game_count = game_count,
+                .prng = std.rand.DefaultPrng.init(rng_seed),
+                };
         }
 
         /// generate the next game
         /// returns null if the max number of games was reached
         pub fn next(self : * @This()) ?Game {
             if (self.current_game_count+1 < self.max_game_count) {
-                self.current_game_count += 1;
                 var game = Game.new();
-                game.playToFinish(picking_strategy) catch unreachable;
-                return game;
+                var dice_result = dice.DiceResult.new_random();
+
+
+                return Game.new();
             } else {
                 return null;
             }

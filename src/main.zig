@@ -22,7 +22,7 @@ pub fn main() anyerror!void {
     };
 
     //var generator : game.GameGenerator(foo, 10) = undefined;
-    var game_generator = game.GameGenerator(dummy_picking_strat, 10).new();
+    var game_generator = game.GameGenerator(dummy_picking_strat, 10).new(1337);
     var g = game_generator.next().?;
     g.print();
 

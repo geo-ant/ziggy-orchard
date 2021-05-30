@@ -1,3 +1,11 @@
+const std = @import("std");
+
+// This is a threadlocal global rng, I really hope it does what I think it does :D
+threadlocal var prng = std.rand.DefaultPrng.init(blk: {
+        var seed: u64 = undefined;
+        try std.os.getrandom(std.mem.asBytes(&seed));
+        break :blk seed;
+    });
 /// A variant that contains a valid dice result, either
 /// * a raven
 /// * a basket
@@ -17,6 +25,16 @@ pub const DiceResult = union(enum) {
 
     pub fn new_fruit(index: usize) !@This() {
         return @This(){ .fruit = try Fruit.new(index) };
+    }
+
+    pub fn new_random() @This() {
+        const rnd = prng.intRangeAtMost(u8, 0,(Fruit.TREE_COUNT-1)+2);
+        switch (rnd) {
+            0...Fruit.TREE_COUNT-1 => |index| return .{.fruit = Fruit.new(index) catch  unreachable},
+            TREE_COUNT => return .{.basket = .{}},
+            TREE_COUNT+1 => return .{.raven = .{}},
+            else => unreachable,
+        }
     }
 };
 
