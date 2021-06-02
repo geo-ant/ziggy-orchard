@@ -23,6 +23,7 @@ pub const DiceResult = union(enum) {
 
     pub fn new_random(prng :  * std.rand.DefaultPrng) @This() {
         const rand = prng.random.intRangeAtMost(u8, 0, Fruit.TREE_COUNT+1);
+        
         switch (rand) {
             0...Fruit.TREE_COUNT-1 => |index| return .{.fruit = Fruit.new(index) catch  unreachable},
             Fruit.TREE_COUNT => return .{.basket = .{}},
@@ -31,6 +32,7 @@ pub const DiceResult = union(enum) {
         }
     }
 };
+
 
 pub const Raven = struct {};
 pub const Basket = struct {};
