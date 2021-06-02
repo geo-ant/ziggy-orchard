@@ -126,6 +126,7 @@ pub fn GameGenerator(comptime picking_strategy :  PickingStrat, game_count : usi
         max_game_count : usize,
         prng : std.rand.DefaultPrng,
 
+        /// initialize the game generator with a seed for the random number generator
         pub fn new(rng_seed : u64) @This() {
             return .{
                 .current_game_count = 0, 
@@ -139,7 +140,7 @@ pub fn GameGenerator(comptime picking_strategy :  PickingStrat, game_count : usi
         pub fn next(self : * @This()) ?Game {
             if (self.current_game_count+1 < self.max_game_count) {
                 var game = Game.new();
-                var dice_result = dice.DiceResult.new_random();
+                var dice_result = dice.DiceResult.new_random(&self.prng);
 
 
                 return Game.new();
