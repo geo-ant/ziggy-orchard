@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            // if we get an error that the cppdbg option is not recognized,
+            // then install the proprietary c++ extension
+            "type": "cppdbg",
+            "request": "launch",
+            // this cannot contain the ./, instead use the ${workspaceFolder} variable
+            "program": "${workspaceFolder}/zig-out/bin/ziggy-orchard",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "build",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]}

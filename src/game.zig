@@ -151,7 +151,7 @@ pub fn GameGenerator(comptime picking_strategy: PickingStrat, game_count: usize)
 
         // internal helper function to help play a game to finish
         fn playGameToFinish(self: *@This(), game: *Game ) !void {
-            var dice_result : dice.DiceResult = undefined;
+            var dice_result  = dice.DiceResult.new_random(&self.prng);
             while (!(game.isWon() or game.isLost())) : (dice_result = dice.DiceResult.new_random(&self.prng)) {
                 try game.applySingleTurn(dice_result, picking_strategy);
             }
