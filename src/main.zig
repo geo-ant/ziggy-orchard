@@ -29,7 +29,9 @@ pub fn main() anyerror!void {
     };
 
     //var generator : game.GameGenerator(foo, 10) = undefined;
-    var game_generator = game.GameGenerator(dummy_picking_strat, 12).new(1337);
+    var seed : u64 = undefined;
+    try std.os.getrandom(std.mem.asBytes(&seed));
+    var game_generator = game.GameGenerator(dummy_picking_strat, 12).new(seed);
     var g = game_generator.next().?;
     g.print();
 

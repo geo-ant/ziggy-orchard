@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "(gdb) Launch",
             // if we get an error that the cppdbg option is not recognized,
@@ -24,4 +25,5 @@
                 }
             ]
         }
-    ]}
+    ]
+}
