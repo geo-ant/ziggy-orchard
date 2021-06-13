@@ -89,7 +89,9 @@ const DiceError = error{
     InvalidFruitIndex
 };
 
+const expectMatches = @import("test-helpers").expectMatches;
 
-test "something" {
-
+test "Dice constructors: Raven, Basket" {
+    try expectMatches(DiceResult.new_basket(), .basket);
+    try expectMatches(DiceResult.new_raven(), .raven);
 }

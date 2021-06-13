@@ -15,6 +15,7 @@ pub fn build(b: *std.build.Builder) void {
     exe.setTarget(target);
     exe.setBuildMode(mode);
     exe.install();
+    //exe.addPackagePath("test-helpers","test-helpers/helpers.zig");
 
     const run_cmd = exe.run();
     run_cmd.step.dependOn(b.getInstallStep());
@@ -24,4 +25,11 @@ pub fn build(b: *std.build.Builder) void {
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
+
+    // not sure if this is completely idiomatic, but I got it from
+    // https://github.com/ziglang/zig/blob/6cc88458029759bbedcb4d949deb887d464cdd60/build.zig
+    const test_suite = b.addTest("test-suite.zig");
+    test_suite.addPackagePath("test-helpers", "test-helpers/helpers.zig");
+    const tests_suite_step = b.step("test", "test suite for ziggy-orchard");
+    tests_suite_step.dependOn(&test_suite.step);
 }

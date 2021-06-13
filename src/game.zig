@@ -161,3 +161,8 @@ pub fn GameGenerator(comptime picking_strategy: PickingStrat, game_count: usize)
         }
     };
 }
+
+const expect = std.testing.expect;
+test "todo" {
+    try expect(true);
+}

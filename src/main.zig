@@ -36,4 +36,12 @@ pub fn main() anyerror!void {
     g.print();
 
     std.log.info("Dice = {s}", .{out});
+
+    
+}
+
+const expect = std.testing.expect;
+
+test "something" {
+    //try expect(false);
 }
