@@ -86,12 +86,27 @@ pub const Fruit = struct {
 /// An error that indicates that something went wrong when constructing a dice result
 const DiceError = error{ 
     /// invalid fruit index was given 
-    InvalidFruitIndex
+    InvalidFruitIndex,
 };
 
-const expectMatches = @import("test-helpers").expectMatches;
+const test_helpers = @import("test-helpers");
+const expectVariant = test_helpers.expectVariant;
+const expectError = test_helpers.expectError;
+const expectErrorVariant = test_helpers.expectErrorVariant;
+const expect = std.testing.expect;
 
-test "Dice constructors: Raven, Basket" {
-    try expectMatches(DiceResult.new_basket(), .basket);
-    try expectMatches(DiceResult.new_raven(), .raven);
+test "DiceResult constructors: Raven, Basket" {
+    try expectVariant(DiceResult.new_basket(), .basket);
+    try expectVariant(DiceResult.new_raven(), .raven);
+}
+
+const Err = error{bla};
+
+test "DiceResult constructor: Fruit" {
+    // TODO: how can I elegantly test that the variant indeed contains the payload I want?
+    // maybe I have to switch on it...
+    try expectVariant(DiceResult.new_fruit(0), .fruit);
+    
+    try expectError(DiceResult.new_fruit(Fruit.TREE_COUNT));
+    try expectErrorVariant(DiceResult.new_fruit(10),DiceError.InvalidFruitIndex);
 }
