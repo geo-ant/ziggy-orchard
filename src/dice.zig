@@ -57,7 +57,6 @@ pub const DiceResult = union(enum) {
 
         const rand = prng.random.intRangeAtMost(u8, 0, Fruit.TREE_COUNT+1);
 
-
         switch (rand) {
             0...Fruit.TREE_COUNT-1 => |index| return .{.fruit = Fruit.new(index) catch  unreachable},
             Fruit.TREE_COUNT => return .{.basket = .{}},
@@ -89,24 +88,23 @@ const DiceError = error{
     InvalidFruitIndex,
 };
 
-const test_helpers = @import("test-helpers");
-const expectVariant = test_helpers.expectVariant;
-const expectError = test_helpers.expectError;
-const expectErrorVariant = test_helpers.expectErrorVariant;
+const expectEqual = std.testing.expectEqual;
+const expectError = std.testing.expectError;
 const expect = std.testing.expect;
 
 test "DiceResult constructors: Raven, Basket" {
-    try expectVariant(DiceResult.new_basket(), .basket);
-    try expectVariant(DiceResult.new_raven(), .raven);
+    try expectEqual(DiceResult.new_basket(), .basket);
+    try expectEqual(DiceResult.new_raven(), .raven);
 }
-
-const Err = error{bla};
 
 test "DiceResult constructor: Fruit" {
     // TODO: how can I elegantly test that the variant indeed contains the payload I want?
     // maybe I have to switch on it...
-    try expectVariant(DiceResult.new_fruit(0), .fruit);
+    var idx :u8 = 0;
+    while (idx < Fruit.TREE_COUNT) : (idx += 1) {
+        try expectEqual(DiceResult.new_fruit(idx),DiceResult{.fruit=Fruit{.index=idx}});
+    }
     
-    try expectError(DiceResult.new_fruit(Fruit.TREE_COUNT));
-    try expectErrorVariant(DiceResult.new_fruit(10),DiceError.InvalidFruitIndex);
+    try expectError(DiceError.InvalidFruitIndex,DiceResult.new_fruit(Fruit.TREE_COUNT));
+    try expectError(DiceError.InvalidFruitIndex,DiceResult.new_fruit(10));
 }
