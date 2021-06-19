@@ -32,14 +32,17 @@ pub const DiceResult = union(enum) {
     basket: Basket,
     fruit: Fruit,
 
+    // create a new raven dice throw
     pub fn new_raven() @This() {
         return @This(){ .raven = .{} };
     }
 
+    // create a new basked dice throw
     pub fn new_basket() @This() {
         return @This(){ .basket = .{} };
     }
 
+    // create a new fruit result
     pub fn new_fruit(index: usize) !@This() {
         return @This(){ .fruit = try Fruit.new(index) };
     }
@@ -107,4 +110,16 @@ test "DiceResult constructor: Fruit" {
     
     try expectError(DiceError.InvalidFruitIndex,DiceResult.new_fruit(Fruit.TREE_COUNT));
     try expectError(DiceError.InvalidFruitIndex,DiceResult.new_fruit(10));
+}
+
+test "DiceResult constructor: random" {
+    var prng = std.rand.Xoroshiro128.init(22131342);
+    // used this to see what that seed actually produces
+    // var i : u32 = 0;
+    // while(i < 10) : (i+=1) {
+    //     std.debug.print("result is {}\n", .{DiceResult.new_random(&prng)});
+    // }
+    try expectEqual(DiceResult{.raven = .{}}, DiceResult.new_random(&prng));
+    try expectEqual(DiceResult{.fruit=.{.index=3}}, DiceResult.new_random(&prng));
+    try expectEqual(DiceResult{.basket=.{}}, DiceResult.new_random(&prng));
 }
