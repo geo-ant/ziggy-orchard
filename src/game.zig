@@ -43,7 +43,7 @@ pub const Game = struct {
             .turn_count = 0,
         };
     }
-    
+
     /// the total number of fruit left in the game
     pub fn totalFruitCount(self: @This()) usize {
         var total: usize = 0;
@@ -83,6 +83,7 @@ pub const Game = struct {
     /// Apply a single turn to a game using the given dice result and picking strat
     /// the picking strat will only be used if the dice result warrants it, i.e.
     /// it is a basket.
+    /// each single turn increases the turn count by one
     pub fn applySingleTurn(self: *Game, dice_result: dice.DiceResult, player_pick: PickingStrat) !void {
         std.log.info("Dice = {s}", .{dice_result});
 
@@ -111,6 +112,7 @@ pub const Game = struct {
                 }
             },
         }
+        self.turn_count +=1;
     }
 };
 
@@ -163,7 +165,23 @@ pub fn GameGenerator(comptime picking_strategy: PickingStrat, game_count: usize)
     };
 }
 
+
+const expectEqual = std.testing.expectEqual;
 const expect = std.testing.expect;
-test "todo" {
-    try expect(true);
+
+test "Game: default construction" {
+    try expectEqual(Game{.fruit_count = [_]usize{10} ** Game.TREE_COUNT, .raven_count = 0, .turn_count = 0}, Game.new());
+}
+
+test "Game: win and loss" {
+    try expect(!Game.new().isWon());
+    try expect(!Game.new().isLost());
+
+    try expect((Game{.fruit_count = [_]usize{0} ** Game.TREE_COUNT, .raven_count = Game.RAVEN_COMPLETE_COUNT-1, .turn_count = 0}).isWon());
+    try expect(!(Game{.fruit_count = [_]usize{1} ** Game.TREE_COUNT, .raven_count = Game.RAVEN_COMPLETE_COUNT, .turn_count = 0}).isWon());
+    try expect((Game{.fruit_count = [_]usize{1} ** Game.TREE_COUNT, .raven_count = Game.RAVEN_COMPLETE_COUNT, .turn_count = 0}).isLost());
+}
+
+test "Game: applying a single turn GIVEN DICE RESULTS" {
+    try expect(false);
 }
