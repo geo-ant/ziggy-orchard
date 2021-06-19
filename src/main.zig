@@ -32,12 +32,10 @@ pub fn main() anyerror!void {
     var seed : u64 = undefined;
     try std.os.getrandom(std.mem.asBytes(&seed));
     var game_generator = game.GameGenerator(dummy_picking_strat, 12).new(seed);
-    var g = game_generator.next().?;
-    g.print();
+    var g = (try game_generator.next()).?;
+    std.debug.print("Game = {s}", .{g});
 
     std.log.info("Dice = {s}", .{out});
-
-    
 }
 
 const expect = std.testing.expect;

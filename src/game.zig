@@ -43,11 +43,7 @@ pub const Game = struct {
             .turn_count = 0,
         };
     }
-
-    pub fn print(self: Game) void {
-        std.log.info("Game: fruit = {any}, ravens = {}, turns = {}", .{ self.fruit_count, self.raven_count, self.turn_count });
-    }
-
+    
     /// the total number of fruit left in the game
     pub fn totalFruitCount(self: @This()) usize {
         var total: usize = 0;
@@ -138,11 +134,16 @@ pub fn GameGenerator(comptime picking_strategy: PickingStrat, game_count: usize)
 
         /// generate the next game which is played from new game to finish
         /// returns null if the max number of games was reached
-        pub fn next(self: *@This()) ?Game {
+        /// this iterator uses !?Game as the return type because the iteration
+        /// could potentially fail if invalid values are used inside the game
+        /// this is nothing the user has control over and indicates a programming error
+        /// so from this point of view just crashing and returning ?Game would be fine.
+        /// I just wanted to work with !? iterators...
+        pub fn next(self: *@This()) !?Game {
             if (self.current_game_count + 1 < self.max_game_count) {
                 self.current_game_count +=1;
                 var game = Game.new();
-                self.playGameToFinish(&game) catch unreachable;
+                try self.playGameToFinish(&game);
                 return game;
             } else {
                 return null;
