@@ -14,55 +14,6 @@ fn dummy_picking_strat(g :game.Game) ?usize {
     return null;
 }
 
-fn hasFnWithSig(comptime T : type, comptime name :[]const u8, comptime Sig : anytype, comptime R : type) bool {
-    
-    // this is just to save some compile time in case the function name does not exist at all
-    if (!@hasDecl(T, name)) {
-        return false;
-    }
-
-    comptime const decls   = switch (@typeInfo(T)) {
-        .Union => |u| u,
-        .Struct => |s| s,
-        .Enum => |e| e,
-        else => return null,
-    }.decls;
-
-    comptime {
-        inline for (decls) |decl| {
-            if (std.mem.eql(u8, name, decl.name)) {
-                switch (decl.data) {
-                    .Fn => |fndecl| {
-                        // @compileLog("fndecl.fn_type = ", fndecl.fn_type);
-                        if( !areEqualExceptForError(fndecl.return_type,R)) {
-                            return false;
-                        }
-                        // maybe replace by a if (unpack(Variant, val)) |var| {}
-                        const func =  switch (@typeInfo(fndecl.fn_type)) {
-                            .Fn => |f| f,
-                            else => @compileError("This should have been a function type. Something must have changed with lib / compiler internals."),
-                        };
-
-                        const signature_types = extractFunctionArguments(Sig);
-
-                        comptime if (signature_types.len==func.args.len) {
-                            inline for (signature_types) |arg_type,idx| {
-                                if (arg_type != func.args[idx].arg_type) {
-                                    return false;
-                                }
-                            }
-                        } else {
-                            return false;
-                        };
-                        return true;
-                    },
-                    else => {}
-                }
-            }
-        }
-    }
-    return false;
-}
 
 fn hasFnWithSig2(comptime T : type, comptime name :[]const u8, comptime Signature : type) bool {
     
@@ -96,16 +47,6 @@ fn hasFnWithSig2(comptime T : type, comptime name :[]const u8, comptime Signatur
     }
     return false;
 }
-
-fn tryUnwrap(optional : anytype, variant : anytype) ?@TypeOf(@typeInfo(optional.?)) {
-    return switch(union_val) {
-        variant => |val| val,
-        else => null,
-    };
-}
-
-// for syntax sugar
-const This = struct{};
 
 fn functionMatchesSignature(comptime MemberFunction:type, comptime Signature:type) bool {
     const function_info = @typeInfo(MemberFunction).Fn;
@@ -151,50 +92,6 @@ fn functionMatchesSignature(comptime MemberFunction:type, comptime Signature:typ
 }
 
 // fn unwrapAs(comptime union_ : anytype, variant : anytype) @TypeOf(union_.variant) {
-//     return switch(union_) {
-//         variant => |val| val,
-//         else => @compileError("Union cannot be unwrapped as the given variant"),
-//     };
-// }
-
-/// returns true if the types are the same, but it is also ok if the types have 
-/// different error unions. Then the child types are compared. Eg. Err1!T and Err2!T will
-/// compare equal
-/// TODO: make this better so that the types only compare equal when the RHS argument error
-/// union is anyerror!T
-fn areEqualExceptForError(comptime T : type, comptime U: type) bool {
-    const unpacked_T= switch(@typeInfo(T)) {
-        .ErrorUnion => |eu| eu.payload,
-        else => T,
-    };
-    const unpacked_U = switch(@typeInfo(U)) {
-        .ErrorUnion => |eu| eu.payload,
-        else => U,
-    };
-    return unpacked_T == unpacked_U;
-}
-
-fn extractFunctionArguments(comptime Sig : anytype) []type {
-    const structure = switch (@typeInfo(@TypeOf(Sig))){
-        .Struct => |s| s,
-        else => @compileError("Must be a struct"),
-    };
-    comptime if (structure.decls.len > 0) {
-        @compileError("Signature struct may have no declarations");
-    };
-
-    var signature_types = [_]type{undefined} ** (structure.fields.len);
-
-    inline for (structure.fields) |field, idx| {
-        if (field.field_type != type) {
-            @compileError("The fields of the signature struct must be types");
-        }
-        signature_types[idx] = field.default_value orelse {@compileError("The types cannot have empty value");};
-    }
-
-
-    return &signature_types;
-}
 
 fn transform(comptime Ts : [] const type, comptime f : fn(type)type) [Ts.len] type {
     
@@ -249,13 +146,6 @@ pub fn main() anyerror!void {
     std.log.info("Dice = {s}", .{out});
 
     const FakeError = error{none};
-
-    std.log.info("Has function Dice = {}", .{hasFnWithSig(dice.DiceResult,"new_raven",.{},dice.DiceResult)});
-    std.log.info("Has function Game = {}", .{hasFnWithSig(game.Game,"applySingleTurn",.{u3,u4},anyerror!void)});
-    std.log.info("Has function Game = {}", .{hasFnWithSig(game.Game,"isWon",.{game.Game},bool)});
-    std.log.info("Has function Game = {}", .{hasFnWithSig(game.Game,"pick_one",.{*game.Game,usize},FakeError!void)});
-    std.log.info("Has function Game = {}", .{hasFnWithSig(game.Game,"pick_one",.{*game.Game,usize},anyerror!void)});
-    std.log.info("***\n", .{});
 
     std.log.info("Has function2 Game = {}", .{hasFnWithSig2(game.Game,"isWon",fn(game.Game) bool)});
     std.log.info("Has function2 Game = {}", .{hasFnWithSig2(game.Game,"totalFruitCount",fn(game.Game)usize)});
