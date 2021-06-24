@@ -169,6 +169,8 @@ pub fn GameGenerator(comptime picking_strategy: PickingStrat, game_count: usize)
 const expectEqual = std.testing.expectEqual;
 const expect = std.testing.expect;
 
+const DiceResult = dice.DiceResult;
+
 test "Game: default construction" {
     try expectEqual(Game{.fruit_count = [_]usize{10} ** Game.TREE_COUNT, .raven_count = 0, .turn_count = 0}, Game.new());
 }
@@ -181,7 +183,36 @@ test "Game: win and loss" {
     try expect(!(Game{.fruit_count = [_]usize{1} ** Game.TREE_COUNT, .raven_count = Game.RAVEN_COMPLETE_COUNT, .turn_count = 0}).isWon());
     try expect((Game{.fruit_count = [_]usize{1} ** Game.TREE_COUNT, .raven_count = Game.RAVEN_COMPLETE_COUNT, .turn_count = 0}).isLost());
 }
+/// dummy strat just for testing. returns null always
+fn null_picking_strategy(game : Game) ?usize {
+    return null; 
+}
 
-test "Game: applying a single turn GIVEN DICE RESULTS" {
-    try expect(false);
+// adds a raven, increases turn count, leave fruit untouched
+test "Game: applying a single turn given Dice Result: Raven" {
+    var g = Game.new();
+    try expect(g.raven_count == 0);
+    try expect(g.turn_count == 0);
+    try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT);
+
+    try g.applySingleTurn(DiceResult.new_raven(), null_picking_strategy);
+    try expect(g.turn_count == 1);
+    try expect(g.raven_count == 1);
+    try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT);
+}
+
+// take one piece from the given tree and leave others untouched, increase turn count
+test "Game: applying a single turn given Dice Result: Fruit" {
+    var g = Game.new();
+
+    try g.applySingleTurn(try DiceResult.new_fruit(1), null_picking_strategy);
+    try expect(g.turn_count == 1);
+    try expect(g.raven_count == 0);
+    try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT-1);
+    try expect(g.fruit_count[1] == Game.INITIAL_FRUIT_COUNT-1);
+}
+
+
+test "Game: applying a single turn given Dice Result: Basket" {
+
 }
