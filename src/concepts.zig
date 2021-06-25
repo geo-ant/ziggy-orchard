@@ -163,7 +163,7 @@ test "concepts.hasFn correctly matches function name and signatures for containe
 /// * `FieldType` the type of the field we are looking for
 /// # Returns
 /// True iff T has a field with name `name` and type `FieldType`.
-fn hasField(comptime T: type, comptime name :[]const u8, comptime FieldType : type) bool {
+pub fn hasField(comptime T: type, comptime name :[]const u8, comptime FieldType : type) bool {
     const fields   = switch (@typeInfo(T)) {
         .Union => |u| u,
         .Struct => |s| s,
@@ -184,6 +184,7 @@ fn hasField(comptime T: type, comptime name :[]const u8, comptime FieldType : ty
 
     return false;
 }
+
 
 test "concepts.hasField" {
 

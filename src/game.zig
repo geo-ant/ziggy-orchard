@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const dice = @import("dice.zig");
+const concepts = @import("concepts.zig");
 
 //TODO: maybe remove because we don't need that
 //const hasFn = std.meta.trait.hasFn;
