@@ -4,13 +4,13 @@ const std = @import("std");
 /// to specify the signature of the function. It will check if the given type (which must be
 /// a struct, union, or enum) declares a function with the given name and signature.
 /// # Arguments
-/// * `T` The type which we want to inspect
 /// * `name` The name of the function which we are looking for
 /// * `Signature`: the function signature we are looking for
 /// # Returns
-/// True iff T declares a function with the given name and signature. There
+/// A std.meta.trait.TraitFn that takes a type T and returns 
+/// true iff T declares a function with the given name and signature. There
 /// is one detail that allows us to query inferred error unions.
-/// ## Function Signatures and Errors
+/// ## On Function Signatures and Errors
 /// Usually the function signature declared in the type and the given `Signature` must match
 /// exactly, which means that the error return types must match exactly. But there is one exception
 /// to this rule. If we specify `fn(...)anyerror!...` as the `Signature` argument, then if and 
@@ -20,33 +20,40 @@ const std = @import("std");
 /// which might be almost impossible to match, or if we don't care about the exact error return type of
 /// the function. That means a `Signature` of `fn(T)anyerror!U` *will* match `fn(T)E!U` for any `E` and also
 /// `fn(T)anyerror!U`. However, it will not match `fn(T)U`.
-pub fn hasFn(comptime T : type, comptime name :[]const u8, comptime Signature : type) bool {
+pub fn hasFn(comptime Signature : type, comptime name :[]const u8) std.meta.trait.TraitFn {
     
-    const decls   = switch (@typeInfo(T)) {
-        .Union => |u| u,
-        .Struct => |s| s,
-        .Enum => |e| e,
-        else => return false,
-    }.decls;
 
-    // this *might* help save some compile time if the decl is not present in the container at all
-    if(!@hasDecl(T, name)) {
-        return false;
-    }
+    const Closure = struct {
 
-    comptime {
-        inline for (decls) |decl| {
-            if (std.mem.eql(u8, name, decl.name)) {
-                switch (decl.data) {
-                    .Fn => |fndecl| { 
-                        return functionMatchesSignature(fndecl.fn_type,Signature);
-                    },
-                    else => {}
+        fn trait(comptime T:type) bool {
+            const decls   = switch (@typeInfo(T)) {
+                .Union => |u| u,
+                .Struct => |s| s,
+                .Enum => |e| e,
+                else => return false,
+            }.decls;
+
+            // this *might* help save some compile time if the decl is not present in the container at all
+            if(!@hasDecl(T, name)) {
+                return false;
+            }
+
+            comptime {
+                inline for (decls) |decl| {
+                    if (std.mem.eql(u8, name, decl.name)) {
+                        switch (decl.data) {
+                            .Fn => |fndecl| { 
+                                return functionMatchesSignature(fndecl.fn_type,Signature);
+                            },
+                            else => {}
+                        }
+                    }
                 }
             }
+            return false;
         }
-    }
-    return false;
+    };
+    return Closure.trait;
 }
 
 fn functionMatchesSignature(comptime MemberFunction:type, comptime Signature:type) bool {
@@ -91,8 +98,8 @@ fn functionMatchesSignature(comptime MemberFunction:type, comptime Signature:typ
 }
 
 test "concepts.hasFn always returns false when not given a container" {
-    try std.testing.expect(!hasFn(i32, "func", fn(i32)i32));
-    try std.testing.expect(!hasFn(f32, "f32", fn(f32)f32));
+    try std.testing.expect(!hasFn(fn(i32)i32,"func")(i32));
+    try std.testing.expect(!hasFn(fn(f32)f32,"f32")(i32));
 }   
 
 test "concepts.hasFn correctly matches function name and signatures for container types" {
@@ -127,31 +134,31 @@ test "concepts.hasFn correctly matches function name and signatures for containe
 
     };
     // hasFn should find everything that is there
-    try std.testing.expect(hasFn(S,"default",fn()S));
-    try std.testing.expect(hasFn(S,"new",fn(i32)S));
-    try std.testing.expect(hasFn(S,"increment",fn(*S)anyerror!void));
-    try std.testing.expect(hasFn(S,"withMyError",fn(i32)MyError!i32));
+    try std.testing.expect(hasFn(fn()S,"default")(S));
+    try std.testing.expect(hasFn(fn(i32)S,"new")(S));
+    try std.testing.expect(hasFn(fn(*S)anyerror!void,"increment")(S));
+    try std.testing.expect(hasFn(fn(i32)MyError!i32,"withMyError")(S));
 
     // hasFn must return false for wrong names or wrong signatures
-    try std.testing.expect(!hasFn(S,"DeFAuLt",fn()S));
-    try std.testing.expect(!hasFn(S,"NEW",fn(i32,i32)S));
-    try std.testing.expect(!hasFn(S,"increment",fn(*S,i32)anyerror!void));
-    try std.testing.expect(!hasFn(S,"withMyError",fn(i64)MyError!i32));
-    try std.testing.expect(!hasFn(S,"withMyError",fn(i16)MyError!i32));
+    try std.testing.expect(!hasFn(fn()S,"DeFAuLt")(S));
+    try std.testing.expect(!hasFn(fn(i32,i32)S,"NEW")(S));
+    try std.testing.expect(!hasFn(fn(*S,i32)anyerror!void,"increment")(S));
+    try std.testing.expect(!hasFn(fn(i64)MyError!i32,"withMyError")(S));
+    try std.testing.expect(!hasFn(fn(i16)MyError!i32,"withMyError")(S));
 
     const DifferentError = error{SomethingElse}; 
 
     // hasFn compares error unions strictly unless signature we ask for is anyerror
-    try std.testing.expect(hasFn(S,"withMyError",fn(i32)anyerror!i32));
-    try std.testing.expect(hasFn(S,"withAnyError",fn()anyerror!i32));
+    try std.testing.expect(hasFn(fn(i32)anyerror!i32,"withMyError")(S));
+    try std.testing.expect(hasFn(fn()anyerror!i32,"withAnyError")(S));
 
-    try std.testing.expect(!hasFn(S,"default",fn()anyerror!S));
-    try std.testing.expect(!hasFn(S,"withAnyError",fn()MyError!i32));
-    try std.testing.expect(!hasFn(S,"withAnyError",fn()DifferentError!i32));
-    try std.testing.expect(!hasFn(S,"withMyError",fn(i32)DifferentError!i32));
+    try std.testing.expect(!hasFn(fn()anyerror!S,"default")(S));
+    try std.testing.expect(!hasFn(fn()MyError!i32,"withAnyError")(S));
+    try std.testing.expect(!hasFn(fn()DifferentError!i32,"withAnyError")(S));
+    try std.testing.expect(!hasFn(fn(i32)DifferentError!i32,"withMyError")(S));
 
     // this works because the inferred error union is exactly only MyError
-    try std.testing.expect(!hasFn(S,"increment",fn(*S,i32)MyError!void));
+    try std.testing.expect(!hasFn(fn(*S,i32)MyError!void,"increment")(S));
 }
 
 
