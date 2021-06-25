@@ -25,7 +25,7 @@ pub fn hasFn(comptime Signature : type, comptime name :[]const u8) std.meta.trai
 
     const Closure = struct {
 
-        fn trait(comptime T:type) bool {
+        pub fn trait(comptime T:type) bool {
             const decls   = switch (@typeInfo(T)) {
                 .Union => |u| u,
                 .Struct => |s| s,
@@ -170,26 +170,32 @@ test "concepts.hasFn correctly matches function name and signatures for containe
 /// * `FieldType` the type of the field we are looking for
 /// # Returns
 /// True iff T has a field with name `name` and type `FieldType`.
-pub fn hasField(comptime T: type, comptime name :[]const u8, comptime FieldType : type) bool {
-    const fields   = switch (@typeInfo(T)) {
-        .Union => |u| u,
-        .Struct => |s| s,
-        .Enum => |e| e,
-        else => return false,
-    }.fields;
+pub fn hasField(comptime name :[]const u8, comptime FieldType : type) std.meta.trait.TraitFn {
+    
+    const Closure = struct {
+        pub fn trait (comptime T: type) bool{
+            const fields   = switch (@typeInfo(T)) {
+                .Union => |u| u,
+                .Struct => |s| s,
+                .Enum => |e| e,
+                else => return false,
+            }.fields;
 
-    // this *might* help save some compile time if the decl is not present in the container at all
-    if(!@hasField(T, name)) {
-        return false;
-    }
+            // this *might* help save some compile time if the decl is not present in the container at all
+            if(!@hasField(T, name)) {
+                return false;
+            }
 
-    inline for (fields) |field| {
-        if (std.mem.eql(u8, field.name, name) and field.field_type == FieldType) {
-            return true;
+            inline for (fields) |field| {
+                if (std.mem.eql(u8, field.name, name) and field.field_type == FieldType) {
+                    return true;
+                }
+            }
+
+            return false;
         }
-    }
-
-    return false;
+    };
+    return Closure.trait;
 }
 
 
@@ -200,14 +206,17 @@ test "concepts.hasField" {
         bar : f32,
     };
 
-    try std.testing.expect(hasField(S, "foo", i32));
-    try std.testing.expect(hasField(S, "bar", f32));
+    try std.testing.expect(hasField("foo", i32)(S));
+    try std.testing.expect(hasField("bar", f32)(S));
 
-    try std.testing.expect(!hasField(S, "foo", u32));
-    try std.testing.expect(!hasField(S, "bar", f64));
+    try std.testing.expect(!hasField("foo", u32)(S));
+    try std.testing.expect(!hasField("bar", f64)(S));
 
-    try std.testing.expect(!hasField(S, "fooo", i32));
-    try std.testing.expect(!hasField(S, "az", f32));
-    try std.testing.expect(!hasField(S, "ba", f32));
-    try std.testing.expect(!hasField(S, "baz", f32));
+    try std.testing.expect(!hasField("fooo", i32)(S));
+    try std.testing.expect(!hasField("az", f32)(S));
+    try std.testing.expect(!hasField("ba", f32)(S));
+    try std.testing.expect(!hasField("baz", f32)(S));
+
+    try std.testing.expect(!hasField("baz", i32)(i32));
+
 }
