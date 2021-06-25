@@ -1,5 +1,5 @@
 const std = @import("std");
-const assert = comptime std.debug.assert;
+const assert = std.debug.assert;
 const TypeInfo = std.builtin.TypeInfo;
 
 /// a concept-like / trait like metafunction to
@@ -15,11 +15,6 @@ fn assertIsOfPrngType(arg : anytype) void {
     const hasFieldRandom = std.meta.trait.hasField("random");
     comptime if (!hasFieldRandom(prng_type)) {
         @compileError("PRNG must have member field 'random'");
-    };
-
-    const hasRngFunction = std.meta.trait.hasFn("intRangeAtMost");
-    comptime if (!hasFieldRandom(prng_type)) {
-        @compileError("PRNG member field 'random' must have member function 'intRangeAtMost'");
     };
 } 
 

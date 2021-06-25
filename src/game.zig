@@ -184,7 +184,7 @@ test "Game: win and loss" {
     try expect((Game{.fruit_count = [_]usize{1} ** Game.TREE_COUNT, .raven_count = Game.RAVEN_COMPLETE_COUNT, .turn_count = 0}).isLost());
 }
 /// dummy strat just for testing. returns null always
-fn null_picking_strategy(game : Game) ?usize {
+fn null_picking_strategy(_ : Game) ?usize {
     return null; 
 }
 
