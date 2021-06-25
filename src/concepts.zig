@@ -1,5 +1,8 @@
 const std = @import("std");
 
+
+pub const Self = struct{};
+
 /// A function similar to std.meta.hasFn, but providing an extra argument which allows
 /// to specify the signature of the function. It will check if the given type (which must be
 /// a struct, union, or enum) declares a function with the given name and signature.

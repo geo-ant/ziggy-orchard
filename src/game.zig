@@ -12,7 +12,14 @@ const concepts = @import("concepts.zig");
 /// https://github.com/ziglang/zig/issues/1268
 //pub const hasPickingStrategyTrait = std.meta.trait.multiTrait(.{hasFn("pick")});
 
-pub const PickingStrat: type = fn (Game) ?usize;
+//TODO correct this to include Self thing
+pub const isPickingStrategy = concepts.hasFn(fn(Game)?usize, "pick");
+
+fn static_assert(comptime ok : bool, comptime message : []const u8) void{
+    if(!ok) {
+        @compileError("static assertion failed: " ++ message);
+    }
+}
 
 pub const GameError = error{
     /// a picking strat did an illegal move (i.e. take more than one piece of fruit per pick)
@@ -84,8 +91,16 @@ pub const Game = struct {
     /// Apply a single turn to a game using the given dice result and picking strat
     /// the picking strat will only be used if the dice result warrants it, i.e.
     /// it is a basket.
-    /// each single turn increases the turn count by one
-    pub fn applySingleTurn(self: *Game, dice_result: dice.DiceResult, player_pick: PickingStrat) !void {
+    /// each single turn increases the turn count by one.
+    /// # Arguments
+    /// * `self` 
+    /// * `dice_result` the dice result
+    /// * `strategy` a picking strategy that is invoked on a basket dice result. It must be
+    /// a container that exposes a method `fn pick (Game)?usize`.
+    pub fn applySingleTurn(self: *Game, dice_result: dice.DiceResult, strategy: anytype) !void {
+        //TODO comment this back in
+        //comptime static_assert(isPickingStrategy(@TypeOf(strategy)), "Strategy parameter must have the strategy interface");
+
         std.log.info("Dice = {s}", .{dice_result});
 
         switch (dice_result) {
@@ -100,7 +115,7 @@ pub const Game = struct {
                 const _idxs = [_]u8{ 1, 2 };
                 const total_fruit_before = self.totalFruitCount();
                 for (_idxs) |_| {
-                    if (player_pick(self.*)) |index| {
+                    if (strategy.pick(self.*)) |index| {
                         try self.pick_one(index);
                     }
                 }
@@ -185,14 +200,17 @@ test "Game: win and loss" {
     try expect((Game{.fruit_count = [_]usize{1} ** Game.TREE_COUNT, .raven_count = Game.RAVEN_COMPLETE_COUNT, .turn_count = 0}).isLost());
 }
 
-// dummy strat just for testing. returns null always
-fn null_picking_strategy(_ : Game) ?usize {
-    return null; 
-}
+
+// a dummy strategy that always returns a null index
+const NullPickingStrategy = struct {
+    pub fn pick(self : *@This(),_:Game) ?usize {
+        return null;
+    }
+};
+
 
 // adds a raven, increases turn count, leave fruit untouched
 test "Game: applying a single turn given Dice Result: Raven" {
-
 
 
     var g = Game.new();
@@ -200,7 +218,7 @@ test "Game: applying a single turn given Dice Result: Raven" {
     try expect(g.turn_count == 0);
     try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT);
 
-    try g.applySingleTurn(DiceResult.new_raven(), null_picking_strategy);
+    try g.applySingleTurn(DiceResult.new_raven(), &NullPickingStrategy);
     try expect(g.turn_count == 1);
     try expect(g.raven_count == 1);
     try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT);
@@ -210,7 +228,7 @@ test "Game: applying a single turn given Dice Result: Raven" {
 test "Game: applying a single turn given Dice Result: Fruit" {
     var g = Game.new();
 
-    try g.applySingleTurn(try DiceResult.new_fruit(1), null_picking_strategy);
+    try g.applySingleTurn(try DiceResult.new_fruit(1), &NullPickingStrategy{});
     try expect(g.turn_count == 1);
     try expect(g.raven_count == 0);
     try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT-1);
