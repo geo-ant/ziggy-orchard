@@ -1,5 +1,25 @@
 const std = @import("std");
 
+/// A function similar to std.meta.hasFn, but providing an extra argument which allows
+/// to specify the signature of the function. It will check if the given type (which must be
+/// a struct, union, or enum) declares a function with the given name and signature.
+/// # Arguments
+/// * `T` The type which we want to inspect
+/// * `name` The name of the function which we are looking for
+/// * `Signature`: the function signature we are looking for
+/// # Returns
+/// True iff T declares a function with the given name and signature. There
+/// is one detail that allows us to query inferred error unions.
+/// ## Function Signatures and Errors
+/// Usually the function signature declared in the type and the given `Signature` must match
+/// exactly, which means that the error return types must match exactly. But there is one exception
+/// to this rule. If we specify `fn(...)anyerror!...` as the `Signature` argument, then if and 
+/// only if the return type of the function is also an error union, the error type is discarded when
+/// matching the signatures. That means only the error payload and the function argument types have to
+/// match and any error is accepted. This is very handy if the declaration uses an inferred error union,
+/// which might be almost impossible to match, or if we don't care about the exact error return type of
+/// the function. That means a `Signature` of `fn(T)anyerror!U` *will* match `fn(T)E!U` for any `E` and also
+/// `fn(T)anyerror!U`. However, it will not match `fn(T)U`.
 pub fn hasFn(comptime T : type, comptime name :[]const u8, comptime Signature : type) bool {
     
     const decls   = switch (@typeInfo(T)) {
@@ -125,6 +145,7 @@ test "concepts.hasFn correctly matches function name and signatures for containe
     try std.testing.expect(hasFn(S,"withMyError",fn(i32)anyerror!i32));
     try std.testing.expect(hasFn(S,"withAnyError",fn()anyerror!i32));
 
+    try std.testing.expect(!hasFn(S,"default",fn()anyerror!S));
     try std.testing.expect(!hasFn(S,"withAnyError",fn()MyError!i32));
     try std.testing.expect(!hasFn(S,"withAnyError",fn()DifferentError!i32));
     try std.testing.expect(!hasFn(S,"withMyError",fn(i32)DifferentError!i32));
@@ -133,6 +154,15 @@ test "concepts.hasFn correctly matches function name and signatures for containe
     try std.testing.expect(!hasFn(S,"increment",fn(*S,i32)MyError!void));
 }
 
+
+/// An extension of std.meta.hasField, which takes an additional parameter specifying the
+/// type of the field.
+/// # Arguments
+/// * `T` the type we want to inspect
+/// * `name` the name of the field we are looking for
+/// * `FieldType` the type of the field we are looking for
+/// # Returns
+/// True iff T has a field with name `name` and type `FieldType`.
 fn hasField(comptime T: type, comptime name :[]const u8, comptime FieldType : type) bool {
     const fields   = switch (@typeInfo(T)) {
         .Union => |u| u,

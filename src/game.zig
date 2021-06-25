@@ -183,13 +183,17 @@ test "Game: win and loss" {
     try expect(!(Game{.fruit_count = [_]usize{1} ** Game.TREE_COUNT, .raven_count = Game.RAVEN_COMPLETE_COUNT, .turn_count = 0}).isWon());
     try expect((Game{.fruit_count = [_]usize{1} ** Game.TREE_COUNT, .raven_count = Game.RAVEN_COMPLETE_COUNT, .turn_count = 0}).isLost());
 }
-/// dummy strat just for testing. returns null always
+
+// dummy strat just for testing. returns null always
 fn null_picking_strategy(_ : Game) ?usize {
     return null; 
 }
 
 // adds a raven, increases turn count, leave fruit untouched
 test "Game: applying a single turn given Dice Result: Raven" {
+
+
+
     var g = Game.new();
     try expect(g.raven_count == 0);
     try expect(g.turn_count == 0);

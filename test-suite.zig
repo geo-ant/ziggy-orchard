@@ -8,4 +8,5 @@ test "test suite" {
     _ = @import("src/main.zig");
     _ = @import("src/dice.zig");
     _ = @import("src/game.zig");
+    _ = @import("src/concepts.zig");
 }
