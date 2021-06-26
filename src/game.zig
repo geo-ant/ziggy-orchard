@@ -135,7 +135,9 @@ pub const Game = struct {
 
 
 /// Get a generator for finished games that employs the given picking strategy
-pub fn GameGenerator(comptime picking_strategy: PickingStrat, game_count: usize) type {
+pub fn GameGenerator(comptime picking_strategy: anytype, game_count: usize) type {
+    //TODO make sure that this is a picking strategy
+    
     return struct {
         current_game_count: usize,
         max_game_count: usize,
@@ -172,7 +174,7 @@ pub fn GameGenerator(comptime picking_strategy: PickingStrat, game_count: usize)
         fn playGameToFinish(self: *@This(), game: *Game ) !void {
             var dice_result  = dice.DiceResult.new_random(&self.prng);
             while (!(game.isWon() or game.isLost())) : (dice_result = dice.DiceResult.new_random(&self.prng)) {
-                try game.applySingleTurn(dice_result, picking_strategy);
+                try game.applySingleTurn(dice_result, &picking_strategy);
             }
             if (game.isWon() == game.isLost()) {
                 return GameError.IllegalGameState;
@@ -203,7 +205,9 @@ test "Game: win and loss" {
 
 // a dummy strategy that always returns a null index
 const NullPickingStrategy = struct {
-    pub fn pick(self : *@This(),_:Game) ?usize {
+    pub fn pick(self : *@This(),game:Game) ?usize {
+        _ = self;
+        _ = game;
         return null;
     }
 };
@@ -218,7 +222,8 @@ test "Game: applying a single turn given Dice Result: Raven" {
     try expect(g.turn_count == 0);
     try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT);
 
-    try g.applySingleTurn(DiceResult.new_raven(), &NullPickingStrategy);
+    var strat = NullPickingStrategy{};
+    try g.applySingleTurn(DiceResult.new_raven(), &strat);
     try expect(g.turn_count == 1);
     try expect(g.raven_count == 1);
     try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT);
@@ -228,7 +233,8 @@ test "Game: applying a single turn given Dice Result: Raven" {
 test "Game: applying a single turn given Dice Result: Fruit" {
     var g = Game.new();
 
-    try g.applySingleTurn(try DiceResult.new_fruit(1), &NullPickingStrategy{});
+    var strat = NullPickingStrategy{};
+    try g.applySingleTurn(try DiceResult.new_fruit(1), &strat);
     try expect(g.turn_count == 1);
     try expect(g.raven_count == 0);
     try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT-1);
