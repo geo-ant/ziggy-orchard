@@ -1,11 +1,10 @@
 const std = @import("std");
 const game = @import("game.zig");
-const TREE_COUNT = @import("dice.zig").Fruit.TREE_COUNT;
 
 /// This strategy picks from the the 
 pub const InOrderPickingStrategy = struct {
     pub fn pickOne(_: @This(), g: game.Game)?usize {
-        for (indexSequence(0, TREE_COUNT-1)) |idx| {
+        for (indexSequence(0, game.TREE_COUNT-1)) |idx| {
             if (g.fruit_count[idx] > 0) {
                 return idx;
             }

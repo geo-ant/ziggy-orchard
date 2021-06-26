@@ -39,7 +39,6 @@ pub fn GameGenerator(comptime picking_strategy: anytype, game_count: usize) type
                 return null;
             }
         }
-
     };
 }
 
@@ -53,8 +52,6 @@ fn playGameToFinish(prng : anytype, g: *Game, strategy : anytype) !void {
         return GameError.IllegalGameState;
     }
 }
-
-
 
 /// Apply a single turn to a game using the given dice result and picking strat
 /// the picking strat will only be used if the dice result warrants it, i.e.
@@ -77,14 +74,14 @@ pub fn applySingleTurn(g: *Game, dice_result: dice.DiceResult, strategy: anytype
             std.log.info("Fruit = {s}", .{fruit});
 
             // ignore errors here because the dice might pick an empty tree
-            g.pick_one(fruit.index) catch {};
+            g.pickOne(fruit.index) catch {};
         },
         dice.DiceResult.basket => {
             const _idxs = [_]u8{ 1, 2 };
             const total_fruit_before = g.totalFruitCount();
             for (_idxs) |_| {
                 if (strategy.pickOne(g.*)) |index| {
-                    try g.pick_one(index);
+                    try g.pickOne(index);
                 }
             }
             // ensure that the picking strategies always decrease
@@ -118,13 +115,13 @@ test "Game: applying a single turn given Dice Result: Raven" {
     var g = Game.new();
     try expect(g.raven_count == 0);
     try expect(g.turn_count == 0);
-    try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT);
+    try expect(g.totalFruitCount() == game.TREE_COUNT*game.INITIAL_FRUIT_COUNT);
 
     var strat = NullPickingStrategy{};
     try applySingleTurn(&g,dice.DiceResult.new_raven(), &strat);
     try expect(g.turn_count == 1);
     try expect(g.raven_count == 1);
-    try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT);
+    try expect(g.totalFruitCount() == game.TREE_COUNT*game.INITIAL_FRUIT_COUNT);
 }
 
 // take one piece from the given tree and leave others untouched, increase turn count
@@ -135,8 +132,8 @@ test "Game: applying a single turn given Dice Result: Fruit" {
     try applySingleTurn(&g, try dice.DiceResult.new_fruit(1), &strat);
     try expect(g.turn_count == 1);
     try expect(g.raven_count == 0);
-    try expect(g.totalFruitCount() == dice.Fruit.TREE_COUNT*Game.INITIAL_FRUIT_COUNT-1);
-    try expect(g.fruit_count[1] == Game.INITIAL_FRUIT_COUNT-1);
+    try expect(g.totalFruitCount() == game.TREE_COUNT*game.INITIAL_FRUIT_COUNT-1);
+    try expect(g.fruit_count[1] == game.INITIAL_FRUIT_COUNT-1);
 }
 
 
