@@ -9,4 +9,6 @@ test "test suite" {
     _ = @import("src/dice.zig");
     _ = @import("src/game.zig");
     _ = @import("src/concepts.zig");
+    _ = @import("src/strategies.zig");
+    _ = @import("src/simulate.zig");
 }

@@ -4,28 +4,8 @@ const dice = @import("dice.zig");
 const game = @import("game.zig");
 const concepts = @import("concepts.zig");
 
-const InOrderPickingStrategy = struct {
-    pub fn pick(_: @This(), g: game.Game)?usize {
-        for ([_]u8{0,1,2,3}) |idx| {
-            if (g.fruit_count[idx] > 0) {
-                std.log.info("Select index = {}", .{idx});
-                return idx;
-            }
-        }
-        return null;
-    }
-};
-
-fn dummy_picking_strat(g :game.Game) ?usize {
-    const indices = [_]u8{0,1,2,3};
-    for (indices) |idx| {
-        if (g.fruit_count[idx] > 0) {
-            std.log.info("Select index = {}", .{idx});
-            return idx;
-        }
-    }
-    return null;
-}
+const strategies = @import("strategies.zig");
+const simulate = @import("simulate.zig");
 
 pub fn main() anyerror!void {
     std.log.info("All your codebase are belong to us.", .{});
@@ -43,7 +23,7 @@ pub fn main() anyerror!void {
     //var generator : game.GameGenerator(foo, 10) = undefined;
     var seed : u64 = undefined;
     try std.os.getrandom(std.mem.asBytes(&seed));
-    var game_generator = game.GameGenerator(InOrderPickingStrategy{}, 12).new(seed);
+    var game_generator = simulate.GameGenerator(strategies.InOrderPickingStrategy{}, 12).new(seed);
     var g = (try game_generator.next()).?;
     std.debug.print("Game = {s}", .{g});
 
