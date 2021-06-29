@@ -4,7 +4,8 @@ const game = @import("game.zig");
 /// This strategy picks from the the 
 pub const InOrderPickingStrategy = struct {
     pub fn pickOne(_: @This(), g: game.Game)?usize {
-        for (indexSequence(0, game.TREE_COUNT-1)) |idx| {
+        var idx : usize=0;
+        while (idx < game.TREE_COUNT) :(idx+=1) {
             if (g.fruit_count[idx] > 0) {
                 return idx;
             }
@@ -19,8 +20,22 @@ fn indexSequence(comptime first : usize, comptime last : usize) [last-first+1]us
     return [_]usize{0,1,2,3};
 }
 
-// pub const RandomPickingStrategy = struct {
-//     prng : std.
+const expect = std.testing.expect;
 
-//     pub fn init(seed : )
-// };
+test "InOrderPickingStrategy" {
+    const strat = InOrderPickingStrategy{};
+    
+    const new_game = game.Game.new();
+    try expect(strat.pickOne(new_game).?==0);
+
+    // game with first tree empty
+    var g = new_game;
+    g.fruit_count[0] = 0;
+    try expect(strat.pickOne(g).?==1);
+    // first and second empty
+    g.fruit_count[1] = 0;
+    try expect(strat.pickOne(g).?==2);
+    // all empty trees
+    std.mem.set(usize,&g.fruit_count,0);
+    try expect(strat.pickOne(g)==null);
+}

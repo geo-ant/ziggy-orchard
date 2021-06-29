@@ -6,7 +6,7 @@ const dice = @import("dice.zig");
 
 /// Get a generator for finished games that employs the given picking strategy
 pub fn GameGenerator(comptime picking_strategy: anytype, game_count: usize) type {
-    //TODO make sure that this is a picking strategy
+    //TODO maybe make sure that this is a picking strategy via concepts
     
     return struct {
         current_game_count: usize,
@@ -108,9 +108,10 @@ const NullPickingStrategy = struct {
 
 
 const expect = std.testing.expect;
+const expectError = std.testing.expectError;
 
 // adds a raven, increases turn count, leave fruit untouched
-test "Game: applying a single turn given Dice Result: Raven" {
+test "applySingleTurn: DiceResult = Raven" {
 
     var g = Game.new();
     try expect(g.raven_count == 0);
@@ -125,7 +126,7 @@ test "Game: applying a single turn given Dice Result: Raven" {
 }
 
 // take one piece from the given tree and leave others untouched, increase turn count
-test "Game: applying a single turn given Dice Result: Fruit" {
+test "applySingleTurn: DiceResult =  Fruit" {
     var g = Game.new();
 
     var strat = NullPickingStrategy{};
@@ -136,7 +137,39 @@ test "Game: applying a single turn given Dice Result: Fruit" {
     try expect(g.fruit_count[1] == game.INITIAL_FRUIT_COUNT-1);
 }
 
+// simple mocks which picks according to a given list. If the last pick from the list
+// was taken, null is returned
+const MockStrategy = struct {
+    idx: usize = 0,
+    picks: []const usize,
+    pub fn init(picks : []const usize) @This() {
+        return @This(){.picks = picks, .idx = 0};
+    }
 
-test "Game: applying a single turn given Dice Result: Basket" {
+    pub fn pickOne(self : *@This(), _ : game.Game)?usize {
+        if (self.idx < self.picks.len) {
+            const pick = self.picks[self.idx];
+            self.idx +=1;
+            return pick;
+        } else {
+            return null;
+        }
+    }
+};
 
+
+test "applySingleTurn: DiceResult = Basket" {
+    var strat = MockStrategy.init(&[_]usize{2,1,3});
+    var g = game.Game.new();
+    try applySingleTurn(&g, dice.DiceResult.new_basket(), &strat);
+    try expect(std.mem.eql(usize, &g.fruit_count, &[_]usize{10,9,9,10}));
+    // we must pick 2 as long as the trees are not empty
+    try expectError(error.IllegalPickingStrategy,applySingleTurn(&g,dice.DiceResult.new_basket(), &strat));
+}
+
+test "applySingleTurn: DiceResult = Basket, Picking from emtpy tree" {
+    var strat = MockStrategy.init(&[_]usize{0,0});
+    var g = game.Game.new();
+    g.fruit_count[0]=0;
+    try expectError(error.EmptyTreePick,applySingleTurn(&g,dice.DiceResult.new_basket(), &strat));
 }
