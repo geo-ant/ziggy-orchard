@@ -93,12 +93,15 @@ pub const Game = struct {
 
 
 const expectEqual = std.testing.expectEqual;
+const expectError = std.testing.expectError;
 const expect = std.testing.expect;
 
 const DiceResult = dice.DiceResult;
 
 test "Game.new" {
-    try expectEqual(Game{.fruit_count = [_]usize{10} ** TREE_COUNT, .raven_count = 0, .turn_count = 0}, Game.new());
+    const new_game = Game.new();
+    try expectEqual(Game{.fruit_count = [_]usize{10} ** TREE_COUNT, .raven_count = 0, .turn_count = 0}, new_game);
+    try expect(new_game.totalFruitCount() == INITIAL_FRUIT_COUNT*TREE_COUNT);
 }
 
 test "Game.isWon and Game.isLost" {
@@ -111,5 +114,11 @@ test "Game.isWon and Game.isLost" {
 }
 
 test "Game.pickOne" {
-    //TODO
+    var game = Game.new();
+    try game.pickOne(1);
+    try expect(game.totalFruitCount() == INITIAL_FRUIT_COUNT*TREE_COUNT-1);
+    try expect(game.fruit_count[1] == INITIAL_FRUIT_COUNT-1);
+    std.mem.set(usize, &game.fruit_count, 0);
+    try expectError(error.EmptyTreePick, game.pickOne(0));
+    
 }
