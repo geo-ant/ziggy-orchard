@@ -116,14 +116,16 @@ fn replaceSelfType(comptime ArgType : type, comptime ReplacementType : type) typ
         .Float => return ArgType,
         .Pointer => |pointer| {
                 return @Type(std.builtin.TypeInfo{.Pointer = structUpdate(pointer,.{.child= replaceSelfType(pointer.child,ReplacementType)})});
-            }, //TODO
+            },
         .Array => return ReplacementType, //TODO
         .Struct => return ReplacementType, //TODO
         .ComptimeFloat => return ArgType, 
         .ComptimeInt => return ArgType,
         .Undefined => return ArgType,
         .Null => return ArgType,
-        .Optional => return ReplacementType, //TODO
+        .Optional => |optional| {
+            return @Type(std.builtin.TypeInfo{.Optional = structUpdate(optional, .{.child= replaceSelfType(optional.child,ReplacementType)})});
+            },
         .ErrorUnion => return ReplacementType, //TODO
         .ErrorSet => return ArgType,
         .Enum => return ReplacementType, //TODO
@@ -146,6 +148,8 @@ test "replaceSelfType" {
     try std.testing.expectEqual(replaceSelfType(*Self,Base),*Base);
     try std.testing.expectEqual(replaceSelfType([]Self,Base),[]Base);
     try std.testing.expectEqual(replaceSelfType(?Self,Base),?Base);
+    try std.testing.expectEqual(replaceSelfType([4]Self,Base),[4]Base);
+
     // // and so on
     // // etc etc
     // try std.testing.expectEqual(replaceSelfType(fn()Self,Base),fn()Base);
@@ -156,8 +160,7 @@ test "replaceSelfType" {
 }
 
 
-/// TODO DOCUMENT
-/// maybe also create a structUpdateMut counterpart which takes a *T pointer, where T is some struct type.
+/// TODO DOCUMENT, this is like a rust style struct update syntax
 fn structUpdate(instance : anytype, update : anytype) @TypeOf(instance) {
     const InstanceType = @TypeOf(instance);
 
