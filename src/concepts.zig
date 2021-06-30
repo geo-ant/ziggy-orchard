@@ -1,6 +1,6 @@
 const std = @import("std");
 
-
+/// Syntactic sugar to refer to the Self/@This() type in the hasFn Signature argument
 pub const Self = struct{};
 
 /// A function similar to std.meta.hasFn, but providing an extra argument which allows
@@ -98,6 +98,105 @@ fn functionMatchesSignature(comptime MemberFunction:type, comptime Signature:typ
     }
     
     return std.meta.eql(signature_info.return_type, function_info.return_type);
+}
+
+/// TODO document, helper function
+/// replace occurrences of the This type with the type T
+fn replaceSelfType(comptime ArgType : type, comptime ReplacementType : type) type {
+    if (ArgType == Self) {
+        return ReplacementType;
+    }
+    
+    switch (@typeInfo(ArgType)) {
+        .Type => return ArgType,
+        .Void => return ArgType,
+        .Bool => return ArgType,
+        .NoReturn => return ArgType,
+        .Int => return ArgType,
+        .Float => return ArgType,
+        .Pointer => |pointer| {
+                return @Type(structUpdate(pointer,.{.child= replaceSelfType(pointer.child,ReplacementType)}));
+            }, //TODO
+        .Array => return ReplacementType, //TODO
+        .Struct => return ReplacementType, //TODO
+        .ComptimeFloat => return ArgType, 
+        .ComptimeInt => return ArgType,
+        .Undefined => return ArgType,
+        .Null => return ArgType,
+        .Optional => return ReplacementType, //TODO
+        .ErrorUnion => return ReplacementType, //TODO
+        .ErrorSet => return ArgType,
+        .Enum => return ReplacementType, //TODO
+        .Union => return ReplacementType, //TODO
+        .Fn => return ReplacementType, //TODO
+        .BoundFn => return ReplacementType, //TODO
+        .Opaque => return ArgType,
+        .Frame => return ArgType,
+        .AnyFrame => return ArgType,
+        .Vector => return ReplacementType, // TODO
+        .EnumLiteral => return ArgType,
+    }
+}
+
+test "replaceSelfType" {
+    const Base = struct{};
+    //TODO also test that nothing else gets altered!
+
+    try std.testing.expectEqual(replaceSelfType(Self,Base),Base);
+    try std.testing.expectEqual(replaceSelfType(*Self,Base),*Base);
+    // try std.testing.expectEqual(replaceSelfType([]Self,Base),[]Base);
+    // try std.testing.expectEqual(replaceSelfType(?Self,Base),?Base);
+    // // and so on
+    // // etc etc
+    // try std.testing.expectEqual(replaceSelfType(fn()Self,Base),fn()Base);
+    // try std.testing.expectEqual(replaceSelfType(fn(*Self)?i32,Base),fn(*Base)i32);
+
+    // etc etc
+
+}
+
+
+/// TODO DOCUMENT
+/// maybe also create a structUpdateMut counterpart which takes a *T pointer, where T is some struct type.
+fn structUpdate(instance : anytype, update : anytype) @TypeOf(instance) {
+    const InstanceType = @TypeOf(instance);
+
+    if(@typeInfo(InstanceType) != .Struct) {
+        @compileError("This function can only be applied to struct types");
+    }
+
+    const update_fields = switch(@typeInfo(@TypeOf(update))) {
+        .Struct => |info| info,
+        else => @compileError("The update argument must be a tuple or struct containing the fields to be updated"),
+    }.fields;
+
+    var updated_instance = instance;
+
+    inline for (update_fields) |field| {
+        if(@hasField(InstanceType, field.name)) {
+            @field(updated_instance, field.name) = @field(update, field.name);
+        } else {
+            @compileError("Type " ++ @typeName(InstanceType) ++ " has no field named '" ++ field.name ++ "'");
+        }
+    }
+
+    return updated_instance;
+}
+
+test "structUpdate" {
+    const S = struct {
+        a : i32,
+        b : i32,
+        c : f32,
+    };
+
+    const s = S{.a=1,.b=2,.c=3.14};
+
+    const s_noupdate = structUpdate(s, .{});
+    try std.testing.expect(std.meta.eql(s_noupdate, s));
+
+    const s_new = structUpdate(s, .{.a = 20});
+    try std.testing.expect(std.meta.eql(s_new, .{.a=20,.b=2,.c=3.14}));
 }
 
 test "concepts.hasFn always returns false when not given a container" {
