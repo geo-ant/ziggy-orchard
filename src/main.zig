@@ -6,6 +6,7 @@ const concepts = @import("concepts.zig");
 
 const strategies = @import("strategies.zig");
 const simulate = @import("simulate.zig");
+const analyze = @import("analyze.zig");
 
 pub fn main() anyerror!void {
     std.log.info("All your codebase are belong to us.", .{});
@@ -31,20 +32,3 @@ pub fn main() anyerror!void {
 
     //const Us = transform(&[_]type{i32,u32,u32}, identity);
 }
-
-const expect = std.testing.expect;
-
-test "something" {
-    //try expect(false);
-}
-
-// fn transform(comptime Ts : [] const type, comptime f : fn(type)type) [Ts.len] type {
-    
-//     var Us = [_]type{undefined}**(Ts.len);
-    
-//     inline for (Ts) |T,idx| {
-//         Us[idx] = f(T);
-//     } 
-
-//     return Us;
-// }

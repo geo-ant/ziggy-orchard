@@ -11,4 +11,5 @@ test "test suite" {
     _ = @import("src/concepts.zig");
     _ = @import("src/strategies.zig");
     _ = @import("src/simulate.zig");
+    _ = @import("src/analyze.zig");
 }

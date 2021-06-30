@@ -120,5 +120,4 @@ test "Game.pickOne" {
     try expect(game.fruit_count[1] == INITIAL_FRUIT_COUNT-1);
     std.mem.set(usize, &game.fruit_count, 0);
     try expectError(error.EmptyTreePick, game.pickOne(0));
-    
 }

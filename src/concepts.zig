@@ -23,7 +23,7 @@ pub const Self = struct{};
 /// which might be almost impossible to match, or if we don't care about the exact error return type of
 /// the function. That means a `Signature` of `fn(T)anyerror!U` *will* match `fn(T)E!U` for any `E` and also
 /// `fn(T)anyerror!U`. However, it will not match `fn(T)U`.
-pub fn hasFn(comptime Signature : type, comptime name :[]const u8) std.meta.trait.TraitFn {
+pub fn hasFn(comptime name :[]const u8, comptime Signature : type) std.meta.trait.TraitFn {
     
 
     const Closure = struct {
@@ -101,8 +101,8 @@ fn functionMatchesSignature(comptime MemberFunction:type, comptime Signature:typ
 }
 
 test "concepts.hasFn always returns false when not given a container" {
-    try std.testing.expect(!hasFn(fn(i32)i32,"func")(i32));
-    try std.testing.expect(!hasFn(fn(f32)f32,"f32")(i32));
+    try std.testing.expect(!hasFn("func",fn(i32)i32)(i32));
+    try std.testing.expect(!hasFn("f32", fn(f32)f32)(i32));
 }   
 
 test "concepts.hasFn correctly matches function name and signatures for container types" {
@@ -137,31 +137,31 @@ test "concepts.hasFn correctly matches function name and signatures for containe
 
     };
     // hasFn should find everything that is there
-    try std.testing.expect(hasFn(fn()S,"default")(S));
-    try std.testing.expect(hasFn(fn(i32)S,"new")(S));
-    try std.testing.expect(hasFn(fn(*S)anyerror!void,"increment")(S));
-    try std.testing.expect(hasFn(fn(i32)MyError!i32,"withMyError")(S));
+    try std.testing.expect(hasFn("default",fn()S)(S));
+    try std.testing.expect(hasFn("new",fn(i32)S)(S));
+    try std.testing.expect(hasFn("increment",fn(*S)anyerror!void)(S));
+    try std.testing.expect(hasFn("withMyError",fn(i32)MyError!i32)(S));
 
-    // hasFn must return false for wrong names or wrong signatures
-    try std.testing.expect(!hasFn(fn()S,"DeFAuLt")(S));
-    try std.testing.expect(!hasFn(fn(i32,i32)S,"NEW")(S));
-    try std.testing.expect(!hasFn(fn(*S,i32)anyerror!void,"increment")(S));
-    try std.testing.expect(!hasFn(fn(i64)MyError!i32,"withMyError")(S));
-    try std.testing.expect(!hasFn(fn(i16)MyError!i32,"withMyError")(S));
+    // // hasFn must return false for wrong names or wrong signatures
+    try std.testing.expect(!hasFn("DeFAuLt",fn()S)(S));
+    try std.testing.expect(!hasFn("NEW",fn(i32,i32)S)(S));
+    try std.testing.expect(!hasFn("increment",fn(*S,i32)anyerror!void)(S));
+    try std.testing.expect(!hasFn("withMyError",fn(i64)MyError!i32)(S));
+    try std.testing.expect(!hasFn("withMyError",fn(i16)MyError!i32)(S));
 
     const DifferentError = error{SomethingElse}; 
 
-    // hasFn compares error unions strictly unless signature we ask for is anyerror
-    try std.testing.expect(hasFn(fn(i32)anyerror!i32,"withMyError")(S));
-    try std.testing.expect(hasFn(fn()anyerror!i32,"withAnyError")(S));
+    // // hasFn compares error unions strictly unless signature we ask for is anyerror
+    try std.testing.expect(hasFn("withMyError",fn(i32)anyerror!i32)(S));
+    try std.testing.expect(hasFn("withAnyError",fn()anyerror!i32)(S));
 
-    try std.testing.expect(!hasFn(fn()anyerror!S,"default")(S));
-    try std.testing.expect(!hasFn(fn()MyError!i32,"withAnyError")(S));
-    try std.testing.expect(!hasFn(fn()DifferentError!i32,"withAnyError")(S));
-    try std.testing.expect(!hasFn(fn(i32)DifferentError!i32,"withMyError")(S));
+    try std.testing.expect(!hasFn("default",fn()anyerror!S)(S));
+    try std.testing.expect(!hasFn("withAnyError",fn()MyError!i32)(S));
+    try std.testing.expect(!hasFn("withAnyError",fn()DifferentError!i32)(S));
+    try std.testing.expect(!hasFn("withMyError",fn(i32)DifferentError!i32)(S));
 
-    // this works because the inferred error union is exactly only MyError
-    try std.testing.expect(!hasFn(fn(*S,i32)MyError!void,"increment")(S));
+    // // this works because the inferred error union is exactly only MyError
+    try std.testing.expect(!hasFn("increment",fn(*S,i32)MyError!void)(S));
 }
 
 
