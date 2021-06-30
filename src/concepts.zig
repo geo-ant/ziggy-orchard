@@ -115,7 +115,7 @@ fn replaceSelfType(comptime ArgType : type, comptime ReplacementType : type) typ
         .Int => return ArgType,
         .Float => return ArgType,
         .Pointer => |pointer| {
-                return @Type(structUpdate(pointer,.{.child= replaceSelfType(pointer.child,ReplacementType)}));
+                return @Type(std.builtin.TypeInfo{.Pointer = structUpdate(pointer,.{.child= replaceSelfType(pointer.child,ReplacementType)})});
             }, //TODO
         .Array => return ReplacementType, //TODO
         .Struct => return ReplacementType, //TODO
@@ -144,8 +144,8 @@ test "replaceSelfType" {
 
     try std.testing.expectEqual(replaceSelfType(Self,Base),Base);
     try std.testing.expectEqual(replaceSelfType(*Self,Base),*Base);
-    // try std.testing.expectEqual(replaceSelfType([]Self,Base),[]Base);
-    // try std.testing.expectEqual(replaceSelfType(?Self,Base),?Base);
+    try std.testing.expectEqual(replaceSelfType([]Self,Base),[]Base);
+    try std.testing.expectEqual(replaceSelfType(?Self,Base),?Base);
     // // and so on
     // // etc etc
     // try std.testing.expectEqual(replaceSelfType(fn()Self,Base),fn()Base);
