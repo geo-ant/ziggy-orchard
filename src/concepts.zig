@@ -118,7 +118,13 @@ fn replaceSelfType(comptime ArgType : type, comptime ReplacementType : type) typ
                 return @Type(std.builtin.TypeInfo{.Pointer = structUpdate(pointer,.{.child= replaceSelfType(pointer.child,ReplacementType)})});
             },
         .Array => return ReplacementType, //TODO
-        .Struct => return ReplacementType, //TODO
+        .Struct => {
+            if (ArgType == Self) { // this is not strictly necessary if we want to keep the shortcut above
+                return ReplacementType;
+            } else {
+                return ArgType;
+            }
+        }, 
         .ComptimeFloat => return ArgType, 
         .ComptimeInt => return ArgType,
         .Undefined => return ArgType,
@@ -128,8 +134,20 @@ fn replaceSelfType(comptime ArgType : type, comptime ReplacementType : type) typ
             },
         .ErrorUnion => return ReplacementType, //TODO
         .ErrorSet => return ArgType,
-        .Enum => return ReplacementType, //TODO
-        .Union => return ReplacementType, //TODO
+        .Enum => {
+            if (ArgType == Self) { // this is not strictly necessary if we want to keep the shortcut above
+                return ReplacementType;
+            } else {
+                return ArgType;
+            }
+        },
+        .Union => {
+            if (ArgType == Self) { // this is not strictly necessary if we want to keep the shortcut above
+                return ReplacementType;
+            } else {
+                return ArgType;
+            }
+        },
         .Fn => return ReplacementType, //TODO
         .BoundFn => return ReplacementType, //TODO
         .Opaque => return ArgType,
