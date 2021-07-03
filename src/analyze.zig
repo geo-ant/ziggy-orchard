@@ -1,7 +1,7 @@
 const game = @import("game.zig");
 
 /// Simple analyzer which counts wins and losses
-const WinLossAnalyzer = struct {
+pub const WinLossAnalyzer = struct {
     // number of total turns
     turns : usize ,
     // number of games lost
@@ -43,8 +43,6 @@ const WinLossAnalyzer = struct {
             .turns = new_turns, .wins = new_wins, .losses = new_losses
         };
     }
-
-
 };
 
 const std = @import("std");

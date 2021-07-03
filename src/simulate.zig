@@ -30,7 +30,7 @@ pub fn GameGenerator(comptime picking_strategy: anytype, game_count: usize) type
         /// so from this point of view just crashing and returning ?Game would be fine.
         /// I just wanted to work with !? iterators...
         pub fn next(self: *@This()) !?Game {
-            if (self.current_game_count + 1 < self.max_game_count) {
+            if (self.current_game_count  < self.max_game_count) {
                 self.current_game_count +=1;
                 var g = Game.new();
                 try playGameToFinish(&self.prng,&g, &picking_strategy);
@@ -66,12 +66,12 @@ pub fn applySingleTurn(g: *Game, dice_result: dice.DiceResult, strategy: anytype
     //TODO comment this back in
     //comptime static_assert(isPickingStrategy(@TypeOf(strategy)), "Strategy parameter must have the strategy interface");
 
-    std.log.info("Dice = {s}", .{dice_result});
+    //std.log.info("Dice = {s}", .{dice_result});
 
     switch (dice_result) {
         dice.DiceResult.raven => g.raven_count += 1,
         dice.DiceResult.fruit => |fruit| {
-            std.log.info("Fruit = {s}", .{fruit});
+            //std.log.info("Fruit = {s}", .{fruit});
 
             // ignore errors here because the dice might pick an empty tree
             g.pickOne(fruit.index) catch {};
