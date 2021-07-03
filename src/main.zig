@@ -24,7 +24,7 @@ pub fn main() anyerror!void {
     //var generator : game.GameGenerator(foo, 10) = undefined;
     var seed : u64 = undefined;
     try std.os.getrandom(std.mem.asBytes(&seed));
-    var game_generator = simulate.GameGenerator(strategies.InOrderPickingStrategy{}, 10_000_000).new(seed);
+    var game_generator = simulate.GameGenerator(strategies.InOrderPickingStrategy{}, 100).new(seed);
 
     var analyzer = analyze.WinLossAnalyzer.init();
     while (try game_generator.next()) |g| {
