@@ -38,7 +38,6 @@ pub const RAVEN_COMPLETE_COUNT = 9;
 /// initial number of fruit on each tree
 pub const INITIAL_FRUIT_COUNT = 10;
 
-
 pub const Game = struct {
     fruit_count: [TREE_COUNT]usize,
     raven_count: usize,

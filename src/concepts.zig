@@ -188,18 +188,32 @@ pub fn structUpdate(instance : anytype, update : anytype) @TypeOf(instance) {
         @compileError("This function can only be applied to struct types");
     }
 
-    const update_fields = switch(@typeInfo(@TypeOf(update))) {
+    // const update_fields = switch(@typeInfo(@TypeOf(update))) {
+    //     .Struct => |info| info,
+    //     else => @compileError("The update argument must be a tuple or struct containing the fields to be updated"),
+    // }.fields;
+
+    const instance_fields = switch(@typeInfo(@TypeOf(instance))) {
         .Struct => |info| info,
         else => @compileError("The update argument must be a tuple or struct containing the fields to be updated"),
     }.fields;
 
-    var updated_instance = instance;
+    // var updated_instance = instance;
 
-    inline for (update_fields) |field| {
-        if(@hasField(InstanceType, field.name)) {
-            @field(updated_instance, field.name) = @field(update, field.name);
+    // inline for (update_fields) |field| {
+    //     if(@hasField(InstanceType, field.name)) {
+    //         @field(updated_instance, field.name) = @field(update, field.name);
+    //     } else {
+    //         @compileError("Type " ++ @typeName(InstanceType) ++ " has no field named '" ++ field.name ++ "'");
+    //     }
+    // }
+    var updated_instance : InstanceType = undefined;
+
+    inline for (instance_fields) |field| {
+        if (@hasField(@TypeOf(update), field.name)) {
+            @field(updated_instance,field.name) = @field(update,field.name);
         } else {
-            @compileError("Type " ++ @typeName(InstanceType) ++ " has no field named '" ++ field.name ++ "'");
+            @field(updated_instance,field.name) = @field(instance,field.name);
         }
     }
 
